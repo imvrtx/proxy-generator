@@ -7,8 +7,8 @@ A simple Python script for scraping and checking working proxies from various so
 ## Usage
 Clone The Repo and go to the certain folder:
 ```
-git clone https://github.com/vortexsys/proxy-scraper.git
-cd proxy-scraper
+git clone https://github.com/imvrtx/proxy-generator.git
+cd proxy-generator
 ```
 Install Dependencies:
 ```
