@@ -3,8 +3,9 @@ import threading
 import re
 import os
 
-SUCCESS_COUNT = 0
-SUCCESS_COUNT -=1
+URL = "http://httpbin.org/ip"
+HTTP_PROXY_FILENAME = "http.txt"
+SUCCESS_COUNT = -1
 PROXY_LIST_URLS = [
     "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
     "https://api.proxyscrape.com/v2/?request=getproxies&protocol=https&timeout=10000&country=all&ssl=all&anonymity=all",
@@ -50,7 +51,7 @@ def main(timeout=5):
         thread.start()
     for thread in threads:
         thread.join()
-    filename = "http.txt"
+    filename = HTTP_PROXY_FILENAME
     if not os.path.exists(filename):
         print(f"The file {filename} does not exist. Creating it.")
         open(filename, 'w').close()
@@ -70,7 +71,7 @@ def remove_invalid_proxies(filename):
     print(f"Total valid proxies: {len(valid_proxies)}")
 
 def check_proxy(proxy, working_proxies, unchecked_proxies):
-    url = "http://httpbin.org/ip"
+    url = URL
     try:
         response = requests.get(url, proxies={"http": proxy, "https": proxy}, timeout=10)
         response.raise_for_status()
@@ -120,8 +121,7 @@ def check_proxies_from_file(filename):
         thread.join()
     input(f"Total working proxies saved: {len(working_proxies)}")
     clear_file(filename)
-    remove_duplicates("http_check.txt")
-    remove_duplicates("proxies.txt")
+    remove_duplicates("http_check.txt");remove_duplicates("proxies.txt")
 
 if __name__ == "__main__":
     update_title()
