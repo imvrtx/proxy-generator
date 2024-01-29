@@ -1,7 +1,9 @@
+import time
 import requests
 import threading
 import re
 import os
+import json
 
 URL = "http://httpbin.org/ip"
 HTTP_PROXY_FILENAME = "http.txt"
@@ -31,17 +33,16 @@ def get_proxies(url, timeout=5):
         print(f"An error occurred: {e}")
         return []
 
-def update_title():
-    global SUCCESS_COUNT
-    SUCCESS_COUNT += 1
-    title = f"title Proxy Scraper / github.com/vortexsys / {SUCCESS_COUNT} working proxies"
-    os.system(title)
-
 def scrape_website(url, timeout=5):
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
     proxies = get_proxies(url, timeout=timeout)
     with threading.Lock():
         all_proxies.extend(proxies)
     print(f"Website scraped: {url}")
+    if config.get("clearcmd", True):
+        os.system('cls' if os.name == 'nt' else 'clear')
+
 
 def main(timeout=5):
     global all_proxies
@@ -70,6 +71,16 @@ def remove_invalid_proxies(filename):
         file.writelines(proxy + "\n" for proxy in valid_proxies)
     print(f"Total valid proxies: {len(valid_proxies)}")
 
+def update_title(mode):
+    if mode == "setup":
+        title = f"title Proxy Scraper / github.com/vortexsys / Setup"
+        os.system(title)
+    elif mode == "start":
+        global SUCCESS_COUNT
+        SUCCESS_COUNT += 1
+        title = f"title Proxy Scraper / github.com/vortexsys / {SUCCESS_COUNT} working proxies"
+        os.system(title)
+
 def check_proxy(proxy, working_proxies, unchecked_proxies):
     url = URL
     try:
@@ -79,7 +90,7 @@ def check_proxy(proxy, working_proxies, unchecked_proxies):
         working_proxies.add(proxy)
         with open("http_check.txt", "a", encoding="utf-8") as file:
             file.write(proxy + "\n")
-            update_title()
+            update_title("start")
             unchecked_proxies.discard(proxy)
         with open("proxies.txt", "a", encoding="utf-8") as file:
             file.write(proxy + "\n")
@@ -123,9 +134,99 @@ def check_proxies_from_file(filename):
     clear_file(filename)
     remove_duplicates("http_check.txt");remove_duplicates("proxies.txt")
 
+def setup():
+    try:
+        if not os.path.exists('config.json'):
+            config = {"clearcmd": True}
+            with open('config.json', 'w') as config_file:
+                json.dump(config, config_file, indent=4)
+        else:
+            with open('config.json', 'r') as config_file:
+                config = json.load(config_file)
+                if "clearcmd" not in config:
+                    config["clearcmd"] = True
+                    with open('config.json', 'w') as updated_config_file:
+                        json.dump(config, updated_config_file, indent=4)
+        while True:
+            user_input = input("Do you want to enable clear command in the console? (True/False): ").lower()
+            if user_input in ["true", "false"]:
+                config["clearcmd"] = user_input == "true"
+                break
+            else:
+                print("Invalid input. Please enter 'True' or 'False'.")
+        with open('config.json', 'w') as updated_config_file:
+            json.dump(config, updated_config_file, indent=4)
+
+        print("Configuration updated successfully.")
+
+    except Exception:
+            if not os.path.exists('config.json'):
+                config = {"clearcmd": True}
+                with open('config.json', 'w') as config_file:
+                    json.dump(config, config_file, indent=4)
+            else:
+                with open('config.json', 'r') as config_file:
+                    config = json.load(config_file)
+                    if "clearcmd" not in config:
+                        config["clearcmd"] = True
+                        with open('config.json', 'w') as updated_config_file:
+                            json.dump(config, updated_config_file, indent=4)
+            os.system('cls' if os.name == 'nt' else 'clear')
+            user_input = input("Do you want to enable clear command in the console? (True/False): ").lower()
+            if user_input in ["true", "false"]:
+                config["clearcmd"] = user_input == "true"
+            else:
+                print("Invalid input. Please enter 'True' or 'False'.")
+                with open('config.json', 'w') as updated_config_file:
+                        json.dump(config, updated_config_file, indent=4)
+            print("Configuration updated successfully.")
+
+def is_config_setup():
+    try:
+        with open('config.json', 'r') as config_file:
+            config = json.load(config_file)
+            if 'clearcmd' not in config:
+                print("Error: 'clearcmd' key not found in config.json.")
+                setup()
+                return True
+            return True
+    except FileNotFoundError:
+        print("Error: config.json not found.")
+        setup();return True
+    except json.JSONDecodeError:
+        print("Error: config.json is not a valid JSON file.")
+        winput = input("Do you want the program to recreate it? (yes/no)")
+        if winput == "no":
+            setup();return True
+        elif winput == "yes":
+            if os.path.exists('config.json'):
+                os.remove('config.json') if os.name == 'nt' else os.system('rm config.json')
+
+            config = {"clearcmd": True}
+            with open('config.json', 'w') as config_file:
+                json.dump(config, config_file, indent=4)
+                time.sleep(0.5)
+                config_file.close()
+                print("Configuration file recreated successfully.")
+                if os.path.exists('config.json'):
+                    os.remove('config.json') if os.name == 'nt' else os.system('rm config.json')
+                setup();return True
+    except Exception as e:
+        print(f"An error occurred while checking config.json: {e}")
+        input("AFter pressing enter, the program will close.");exit()
+
 if __name__ == "__main__":
-    update_title()
-    clear_file('proxies.txt')
-    main()
-    remove_invalid_proxies("http.txt")
-    check_proxies_from_file("http.txt")
+    if is_config_setup():
+        update_title("setup")
+        clear_file('proxies.txt')
+        update_title("start")
+        main()
+        remove_invalid_proxies("http.txt")
+        check_proxies_from_file("http.txt")
+    else:
+        update_title("start")
+        setup()
+        clear_file('proxies.txt')
+        main()
+        remove_invalid_proxies("http.txt")
+        check_proxies_from_file("http.txt")
