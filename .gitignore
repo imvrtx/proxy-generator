@@ -155,3 +155,4 @@ http_check.txt
 proxies.txt
 main.py
 output.txt
+config.json
